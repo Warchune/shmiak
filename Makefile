@@ -1,6 +1,7 @@
 .PHONY: build install uninstall clean
 
 build:
+	mkdir -p build
 	gcc -o ./build/shmiak main.c -lm
 
 install: build
