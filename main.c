@@ -19,8 +19,14 @@ int main(int argc, char *argv[]) {
     float speed, shift;
     globalArgs.coefficient = 1.0; /* Изначально м/с. */
     globalArgs.step = 0;
+    const struct option long_options[] = {
+            {"coefficient", 1, NULL, 'c'},
+            {"step", 1, NULL, 's'},
+            {"help", 0, NULL, 'h'},
+            {NULL, 0, NULL, 0}
+    };
     int opt = 0;
-    while( (opt = getopt( argc, argv, optString)) != -1){
+    while( (opt = getopt_long( argc, argv, optString, long_options, NULL)) != -1){
         switch(opt){
             case 'c':
                 if (strcmp("kmh", optarg) == 0) {
