@@ -3,65 +3,68 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <string.h>
 
-struct globalArgs_t{
-    char help;
+/* Глобальная структура с аргументами. */
+struct globalArgs{
+    float coefficient;  /* Единицы измерения. */
+    float step; /*Шаг изменения высоты. */
+    float height; /* Начальная высота. */
 } globalArgs;
 
-static const char *optString = "Il:o:vh?";
+/* Строка с опциями. */
+static const char *optString = "c:s:h?";
 
-static const struct option longOpts[] = {
-        { "help", no_argument, NULL, 'h' },
-        { NULL, no_argument, NULL, 0 }
-};
 int main(int argc, char *argv[]) {
+    float speed, shift;
+    globalArgs.coefficient = 1.0; /* Изначально м/с. */
+    globalArgs.step = 0;
     int opt = 0;
-    int longIndex = 0;
-
-    opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
-    while( opt != -1){
+    while( (opt = getopt( argc, argv, optString)) != -1){
         switch(opt){
+            case 'c':
+                if (strcmp("kmh", optarg) == 0) {
+                    globalArgs.coefficient = 3.6; /* Км/ч. */
+                }
+                break;
+            case 's':
+                globalArgs.step = atoi(optarg);
+                break;
             case 'h':
             case '?':
-                printf("Нечего думать, иди прыгай!\n");
+                printf("shmiak - программа, считающая скорость (м/с) падения в вакуме с определенной высоты (м) через фиксированный шаг (10%% oт высоты).\n"
+                       "\n"
+                       "shmiak [float: height]\n"
+                       "\n"
+                       "   -c                 : опция с аргументом ""kmh"" позволяет получать скорость в км/ч. \n"
+                                                            "   -s [flota: step]   : оция позволяет установить шаг, через который будет производиться расчет скорости.\n"
+                                                            "   -h                 : справка о программе.\n");
                 return 0;
             default:
                 break;
         }
-        opt = getopt_long( argc, argv, optString, longOpts, &longIndex );
     }
-
-    float height, step;
-    float v, h;
-
-    if (argc < 2 || argc > 3){
-        printf("Error: не верно указаны аргументы.\n%s height [step]\n", argv[0]);
+    globalArgs.height = atoi(argv[optind]);
+    if (globalArgs.height <= 0){
+        printf("Error: height > 0.\n");
         return 0;
     }
 
-    if ((height = atoi(argv[1])) < 1){
-        printf("Error: неверно указаны аргументы.\nheigh > 1\n");
+    /* Если шаг не задан, то он равен 10% от высоты. */
+    if (globalArgs.step == 0){
+        globalArgs.step = globalArgs.height / 10;
+    }
+    if (globalArgs.step >= globalArgs.height){
+        printf("Error: step > height.\n");
         return 0;
     }
 
-    if (argc == 3) {
-        if ((step = h = atoi(argv[2])) < 1) {
-            printf("Error: неверно указан аргумент.\n%s step\n", argv[0]);
-            return 0;
-        }
-        if (height < step){
-            return 0;
-        }
-    }
-    else {
-        step = h = height / 10;
-    }
-
-    printf("Высота | Скорость\n");
-    while((height - h) >= 0){
-        v = sqrt(2.0 * 10.0 * h);
-        printf("%6.2f | %6.2f \n", height - h, v);
-        h += step;
+    shift = globalArgs.step; /* Суммарный сдвиг от начальной высоты. */
+    printf("height | speed\n");
+    while((globalArgs.height - shift) >= 0){
+        speed = sqrt(2.0 * 10.0 * shift) *  globalArgs.coefficient;
+        printf("%6.2f | %6.2f \n", globalArgs.height - shift, speed);
+        shift += globalArgs.step;
     }
 
     return 0;
